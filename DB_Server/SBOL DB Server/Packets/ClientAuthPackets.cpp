@@ -189,6 +189,8 @@ void ClientAuth(CLIENT* client)
 						ss.clear();
 						ss.str(std::string());
 						ss << "SELECT * FROM garage_data WHERE license = " << licenseNo << " AND impounded = 0";
+						// CARMODS (96) + PARTS (91) - battle server always reads a fixed 187 bytes per car
+						const uint32_t kCarBlobSize = 96 + 91;
 						uint32_t carCount = server->db->Exec(ss.str().c_str());
 						client->outbuf.append<uint8_t>(static_cast<uint8_t>(carCount)); // Cars in Garage
 						if (carCount > 0)
@@ -215,23 +217,22 @@ void ClientAuth(CLIENT* client)
 								db_blob carData = server->db->GetBlob(ss.str().c_str());
 
 								if (carData.size == 0) goto failed;
-								uint8_t* _carData = (uint8_t*)calloc(1, 96 + 91);
+								uint8_t* _carData = (uint8_t*)calloc(1, kCarBlobSize);
 								if (_carData == nullptr) goto failed;
-								CopyMemory(_carData, carData.data.data(), min(carData.size, 96 + 91));
+								CopyMemory(_carData, carData.data.data(), min(carData.size, kCarBlobSize));
 
 								client->outbuf.append<uint8_t>(static_cast<uint8_t>(stoul(bay)));
 								client->outbuf.append<uint32_t>(stoul(carID));
 								client->outbuf.append<float>(stof(KMs));
-								client->outbuf.appendArray(_carData, carData.size);
+								client->outbuf.appendArray(_carData, kCarBlobSize);
 								client->outbuf.append<uint32_t>(stoul(condition));
 
 								free(_carData);
 							}
 						}
-						else
-						{
-							client->outbuf.append<uint8_t>(0); // 0 Cars in Garage
-						}
+						// Do not append a second car-count byte when carCount == 0.
+						// The count was already written above; a duplicate misaligned
+						// item/sign/team data and produced a corrupt 0x0182 for the client.
 
 						//
 						// Item Data

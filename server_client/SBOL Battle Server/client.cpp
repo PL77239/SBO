@@ -1241,7 +1241,13 @@ void Client::SendWelcome(uint8_t type, std::string& name)
 	outbuf.setType(0x100);
 	outbuf.setSubType(0x180);
 	outbuf.append<uint8_t>(type); // Type ????
-	outbuf.appendString(name, 0x08); // Server Name ????
+	// Name field is a fixed 8-byte blob (may contain embedded NULs). Do not use strcpy.
+	uint8_t nameBuf[8] = { 0 };
+	CopyMemory(nameBuf, name.data(), min(name.size(), (size_t)8));
+	outbuf.appendArray(nameBuf, 8);
+	logger->Log(Logger::LOGTYPE_CLIENT, L"Sending 0x0180 welcome to %s (%s)",
+		logger->toWide(username).c_str(),
+		logger->toWide((char*)&IP_Address).c_str());
 	Send();
 }
 void Client::SendAcceptConnection()
@@ -1261,18 +1267,26 @@ void Client::SendAcceptConnection()
 			}
 			else
 			{
+				// Keep explicit length: a bare C-string starting with '\0' becomes an empty std::string.
 				SendWelcome(0, std::string("\0\1\2\4\5\6\7", 7));
 				return;
 			}
 		}
 		else
 		{
+			logger->Log(Logger::LOGTYPE_CLIENT, L"Rejecting login (busy): status=%u management=%u from %s",
+				(uint32_t)server->getStatus(),
+				server->getConnectedToManagementServer() ? 1u : 0u,
+				logger->toWide((char*)&IP_Address).c_str());
 			SendAuthError(Server::AUTHLIST::AUTH_BUSY);
 			return;
 		}
 	}
 	else
 	{
+		logger->Log(Logger::LOGTYPE_CLIENT, L"Rejecting login (outdated): ver=0x%08X from %s",
+			inbuf.getVer(),
+			logger->toWide((char*)&IP_Address).c_str());
 		SendAuthError(Server::AUTHLIST::AUTH_OUTDATED);
 		return;
 	}
