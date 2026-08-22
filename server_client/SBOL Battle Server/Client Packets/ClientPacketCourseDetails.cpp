@@ -73,7 +73,8 @@ void ClientPacketCourseDetails(Client* client)
 	}
 	break;
 	case 0x302:
-	{	// responding to this crashes client but this appears to specify which shop the client has entered.
+	{	// Course / PA / shop transfer. Client often drops TCP and reconnects after this.
+		// Do not send a 0x0382-style reply here — that path crashes 2.03.
 		client->inCourse = false;
 		client->hasPlayers = false;
 		client->SendRemoveRivals();
@@ -84,19 +85,24 @@ void ClientPacketCourseDetails(Client* client)
 		uint16_t value4 = client->inbuf.get<uint16_t>();
 		uint16_t value5 = client->inbuf.get<uint16_t>();
 		uint8_t courseNumber = client->inbuf.get<uint8_t>();
-#ifdef _DEBUG
-		client->logger->Log(Logger::LOGTYPE_CLIENT, L"Client entering course: Float to Int ???: %u - Section: %02X - Distance: %02X - ???: %u - ???: %u - Course: %u.", value1, courseJunction, courseDistance, value4, value5, courseNumber);
-#endif
 
-		// Entering Course
+		client->logger->Log(Logger::LOGTYPE_CLIENT,
+			L"0x0302 course transfer from %s (%u): v1=%u junction=%u distance=%u v4=%u v5=%u course=%u",
+			client->logger->toWide(client->handle).c_str(),
+			client->driverslicense,
+			value1, courseJunction, courseDistance, value4, value5, (uint32_t)courseNumber);
 
 		// Leaving Beginners course
 		if (client->notBeginner == false && value4 == 0 && courseNumber != 0x15) client->notBeginner = true;
 		if (courseNumber == 0x15) courseNumber = 9;
 		else if (courseNumber > COURSE_COUNT || courseNumber == 0)
 		{
-			client->logger->Log(Logger::LOGTYPE_CLIENT, L"Client sent tried to join invalid course.");
+			client->logger->Log(Logger::LOGTYPE_CLIENT, L"Client %s (%u) tried to join invalid course %u.",
+				client->logger->toWide(client->handle).c_str(),
+				client->driverslicense,
+				(uint32_t)courseNumber);
 			client->Disconnect();
+			return;
 		}
 		if (client->course != nullptr) client->course->removeClient(client);
 		client->startJunction = courseJunction;
@@ -104,16 +110,20 @@ void ClientPacketCourseDetails(Client* client)
 		client->currentCourse = courseNumber - 1;
 		client->position.posX1 = 0.0f;
 		client->position.posY1 = 0.0f;
+		client->position.location1 = 0;
+		client->position.location2 = 0;
+		client->position.location3 = 0;
 
-		//if (value4 == 0 && client->currentCourse == 0 && client->notBeginner == true)
-		//{	// Live cam stuff. Only send while entering main course
-		//	client->outbuf.clearBuffer();
-		//	client->outbuf.setSize(0x06);
-		//	client->outbuf.setOffset(0x06);
-		//	client->outbuf.setType(0x300);
-		//	client->outbuf.setSubType(0x382);
-		//}
-		//else
+		// Persist beginner graduation / progress before the client reconnects for PA/shop.
+		if (client->server) client->server->saveClientData(client);
+
+		// Shop / PA courses need shop packet classes enabled for the follow-up session.
+		if (client->currentCourse == Client::COURSETYPE::COURSE_SHOP ||
+			client->currentCourse == Client::COURSETYPE::COURSE_PARTS)
+			client->enableShopPackets();
+		else
+			client->enableCoursePackets();
+
 		return;
 	}
 	break;

@@ -18,6 +18,17 @@
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
+
+# Keep shipped Win32 import libs (OpenSSL / BlowFish). [Dd]ebug/[Rr]elease/
+# above would otherwise ignore lib/Debug and lib/Release.
+!**/lib/Debug/
+!**/lib/Debug/**
+!**/lib/Release/
+!**/lib/Release/**
+!**/lib/win32-debug/
+!**/lib/win32-debug/**
+!**/lib/win32-release/
+!**/lib/win32-release/**
 x64/
 x86/
 [Aa][Rr][Mm]/
