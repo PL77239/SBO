@@ -77,6 +77,10 @@ int32_t Server::Start()
 	if (VerifyConfig() || checkDB())
 		return 1;
 
+	// If Battle Server already has a serverkey.bin next to this exe / cwd, register it.
+	// Prevents "No key found" when sbol.db was created without /createkey matching that file.
+	ImportServerKeyFromFile(".\\serverkey.bin");
+
 	Initialize();
 	running = true;
 	std::thread sThread(ServerThread, this);
@@ -252,13 +256,15 @@ int32_t Server::CreateKey()
 		std::string v = HexString(&iv[0], BLOCK_SIZE);
 		std::stringstream ss;
 		ss << "INSERT INTO server_keys (key, iv) VALUES (X'" << k << "', X'" << v << "')";
-		res = db->Exec(ss.str().c_str());
-
-		if (res != DB_OK)
+		// Exec returns result-row count (0 for INSERT), not a SQLite status code.
+		db->Exec(ss.str().c_str());
+		if (db->Error() && db->Error()[0])
 		{
+			logger->Log(LOGTYPE_ERROR, L"Unable to insert server key: %s", ToWide(db->Error()).c_str());
 			db->Close();
 			return 1;
 		}
+		logger->Log(LOGTYPE_SERVER, L"Created serverkey.bin and registered IV %s in database. Copy serverkey.bin next to the Battle Server exe.", ToWide(v).c_str());
 		db->Close();
 	}
 
@@ -268,6 +274,61 @@ int32_t Server::CreateKey()
 		return 1;
 	}
 
+	return 0;
+}
+int32_t Server::ImportServerKeyFromFile(const char* path)
+{
+	std::ifstream keyfile(path, std::ios::binary);
+	if (!keyfile.is_open())
+	{
+		logger->Log(LOGTYPE_COMM, L"No %s in working directory. If Battle auth fails, run: SBOL DB Server.exe /createkey then copy the new serverkey.bin next to the Battle Server exe.", ToWide(path).c_str());
+		return 1;
+	}
+
+	uint8_t tempKey[48] = { 0 };
+	keyfile.read((char*)&tempKey[0], 48);
+	if (keyfile.gcount() != 48)
+	{
+		logger->Log(LOGTYPE_ERROR, L"%s is not 48 bytes (got %d).", ToWide(path).c_str(), (int)keyfile.gcount());
+		return 1;
+	}
+	keyfile.close();
+
+	uint8_t* key = &tempKey[0];
+	uint8_t* iv = &tempKey[32];
+	std::string k = HexString(key, KEY_SIZE);
+	std::string v = HexString(iv, BLOCK_SIZE);
+
+	int32_t res = db->Open();
+	if (res != DB_OK)
+	{
+		logger->Log(LOGTYPE_ERROR, L"Error Connecting to database: %s.", ToWide(databasename.c_str()));
+		return 1;
+	}
+
+	std::stringstream ss;
+	ss << "SELECT * FROM server_keys WHERE iv = X'" << v << "'";
+	res = db->Exec(ss.str().c_str());
+	if (res > 0)
+	{
+		logger->Log(LOGTYPE_COMM, L"serverkey.bin IV %s already registered in database.", ToWide(v).c_str());
+		db->Close();
+		return 0;
+	}
+
+	ss.clear();
+	ss.str(std::string());
+	ss << "INSERT INTO server_keys (key, iv) VALUES (X'" << k << "', X'" << v << "')";
+	db->Exec(ss.str().c_str());
+	if (db->Error() && db->Error()[0])
+	{
+		logger->Log(LOGTYPE_ERROR, L"Unable to import serverkey.bin: %s", ToWide(db->Error()).c_str());
+		db->Close();
+		return 1;
+	}
+
+	logger->Log(LOGTYPE_SERVER, L"Imported serverkey.bin into database (IV %s).", ToWide(v).c_str());
+	db->Close();
 	return 0;
 }
 bool Server::GetHash(uint8_t *src, uint8_t* dst, uint32_t length)

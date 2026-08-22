@@ -51,7 +51,9 @@ void ServerAuth(CLIENT* client)
 				}
 				else
 				{
-					server->logger->Log(LOGTYPE_COMM, L"No key found for server connecting from %s", server->logger->ToWide((char*)client->IP_Address).c_str());
+					server->logger->Log(LOGTYPE_COMM, L"No key found for server connecting from %s (IV %s). Put matching serverkey.bin in the DB Server working directory and restart, or run: SBOL DB Server.exe /createkey and copy the new file next to the Battle Server exe.",
+						server->logger->ToWide((char*)client->IP_Address).c_str(),
+						server->logger->ToWide(ivStr).c_str());
 					client->Disconnect();
 				}
 				server->db->Close();

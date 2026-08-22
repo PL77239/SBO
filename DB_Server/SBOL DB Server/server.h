@@ -37,6 +37,7 @@ public:
 	int32_t CreateAccount(wchar_t* username, wchar_t* password, wchar_t* email, wchar_t* privileges);
 	int32_t SetPassword(wchar_t* username, wchar_t* password);
 	int32_t CreateKey();
+	int32_t ImportServerKeyFromFile(const char* path = ".\\serverkey.bin");
 	bool GetHash(uint8_t *src, uint8_t* dst, uint32_t length);
 	int32_t LoadConfig(const wchar_t* filename);
 	void CloseDB();
