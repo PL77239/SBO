@@ -30,24 +30,24 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -73,25 +73,31 @@
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>.\include;.\include\mysql;.\include\openssl;$(IncludePath)</IncludePath>
-    <LibraryPath>.\lib\$(configuration);$(LibraryPath)</LibraryPath>
+    <!-- Headers live under include\openssl\... so only include\ is needed (plus mysql). -->
+    <IncludePath>$(ProjectDir)include;$(ProjectDir)include\mysql;$(IncludePath)</IncludePath>
+    <!-- Named win32-debug/win32-release so .gitignore [Dd]ebug/[Rr]elease do not exclude the libs. -->
+    <LibraryPath>$(ProjectDir)lib\win32-debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(ProjectDir)include;$(ProjectDir)include\mysql;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)lib\win32-debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>.\include;.\include\mysql;.\include\openssl;$(IncludePath)</IncludePath>
-    <LibraryPath>.\lib\$(configuration);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)include;$(ProjectDir)include\mysql;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)lib\win32-release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(ProjectDir)include;$(ProjectDir)include\mysql;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)lib\win32-release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -110,7 +116,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>libcrypto.lib;libmysql.lib;ws2_32.lib;libssl.lib;Crypt32.lib;GDI32.LIB;ADVAPI32.LIB;USER32.LIB;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <!-- Explicit ProjectDir path avoids LNK1104 when CWD is not the project folder (VS 2022+). -->
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\win32-debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;libmysql.lib;ws2_32.lib;Crypt32.lib;GDI32.LIB;ADVAPI32.LIB;USER32.LIB;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>
       </EntryPointSymbol>
     </Link>
@@ -129,7 +137,7 @@ copy "$(ProjectDir)libmysql.dll"  "$(OutDir)" /b /y</Command>
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -141,6 +149,8 @@ copy "$(ProjectDir)libmysql.dll"  "$(OutDir)" /b /y</Command>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX64</TargetMachine>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\win32-debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;libmysql.lib;ws2_32.lib;Crypt32.lib;GDI32.LIB;ADVAPI32.LIB;USER32.LIB;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -160,7 +170,8 @@ copy "$(ProjectDir)libmysql.dll"  "$(OutDir)" /b /y</Command>
       <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>libcrypto.lib;libmysql.lib;ws2_32.lib;libssl.lib;Crypt32.lib;GDI32.LIB;ADVAPI32.LIB;USER32.LIB;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\win32-release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;libmysql.lib;ws2_32.lib;Crypt32.lib;GDI32.LIB;ADVAPI32.LIB;USER32.LIB;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>
       </EntryPointSymbol>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -181,7 +192,7 @@ copy "$(ProjectDir)libmysql.dll"  "$(OutDir)" /b /y</Command>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader />
@@ -194,7 +205,13 @@ copy "$(ProjectDir)libmysql.dll"  "$(OutDir)" /b /y</Command>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX64</TargetMachine>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\win32-release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;libmysql.lib;ws2_32.lib;Crypt32.lib;GDI32.LIB;ADVAPI32.LIB;USER32.LIB;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(ProjectDir)csp_crypt.dll" "$(OutDir)" /b /y
+copy "$(ProjectDir)libmysql.dll"  "$(OutDir)" /b /y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="client.cpp" />
