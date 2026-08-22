@@ -301,17 +301,41 @@ void ManagementPacketClientAuth(Client* client)
 						}
 
 						client->outbuf.append<uint32_t>(timeGetTime()); // Time Played
-						srand(timeGetTime());
-						uint32_t rng = ((rand() & 0xFF) << 24) | ((rand() & 0xFF) << 16) | ((rand() & 0xFF) << 8) | (rand() & 0xFF);
-						uint32_t startCount = (uint32_t)(sizeof(startPositions) / sizeof(startPositions[0]));
-						client->startJunction = startPositions[rng % startCount][0];
-						client->startDistance = startPositions[rng % startCount][1];
+						PENDING_COURSE_TRANSFER pending = {};
+						bool resumedTransfer = client->server && client->server->takeCourseTransfer(license, pending);
+						if (resumedTransfer)
+						{
+							client->startJunction = pending.startJunction;
+							client->startDistance = pending.startDistance;
+							client->currentCourse = pending.currentCourse;
+							client->notBeginner = pending.notBeginner;
+							client->logger->Log(Logger::LOGTYPE_CLIENT,
+								L"Resumed course transfer for license %u: course=%u junction=%u distance=%u notBeginner=%u",
+								license,
+								client->currentCourse,
+								client->startJunction,
+								client->startDistance,
+								(uint32_t)client->notBeginner);
+							if (client->currentCourse == Client::COURSETYPE::COURSE_SHOP ||
+								client->currentCourse == Client::COURSETYPE::COURSE_PARTS)
+								client->enableShopPackets();
+							else
+								client->enableCoursePackets();
+						}
+						else
+						{
+							srand(timeGetTime());
+							uint32_t rng = ((rand() & 0xFF) << 24) | ((rand() & 0xFF) << 16) | ((rand() & 0xFF) << 8) | (rand() & 0xFF);
+							uint32_t startCount = (uint32_t)(sizeof(startPositions) / sizeof(startPositions[0]));
+							client->startJunction = startPositions[rng % startCount][0];
+							client->startDistance = startPositions[rng % startCount][1];
+							if (client->notBeginner == false) client->currentCourse = 0x15;
+						}
 						client->outbuf.append<uint16_t>(client->notBeginner ? client->startJunction : 0xffff);
 						client->outbuf.append<uint16_t>(client->notBeginner ? client->startDistance : 0xffff);
 						client->outbuf.append<uint16_t>(0xffff);
 						client->outbuf.append<uint16_t>(client->notBeginner ? 0xffff : 0);
-						if (client->notBeginner == false) client->currentCourse = 0x15;
-						client->outbuf.append<uint8_t>(client->currentCourse);
+						client->outbuf.append<uint8_t>(static_cast<uint8_t>(client->currentCourse));
 
 						client->setActiveCar(activeCarBay);
 					}

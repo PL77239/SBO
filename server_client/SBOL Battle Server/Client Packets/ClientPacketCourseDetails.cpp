@@ -117,6 +117,10 @@ void ClientPacketCourseDetails(Client* client)
 		// Persist beginner graduation / progress before the client reconnects for PA/shop.
 		if (client->server) client->server->saveClientData(client);
 
+		// Client drops TCP after 0x0302; stash transfer so the next auth session
+		// resumes the destination course instead of a fresh Beginner/Main spawn.
+		if (client->server) client->server->stashCourseTransfer(client);
+
 		// Shop / PA courses need shop packet classes enabled for the follow-up session.
 		if (client->currentCourse == Client::COURSETYPE::COURSE_SHOP ||
 			client->currentCourse == Client::COURSETYPE::COURSE_PARTS)
