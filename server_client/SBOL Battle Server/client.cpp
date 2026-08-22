@@ -1261,7 +1261,7 @@ void Client::SendAcceptConnection()
 			}
 			else
 			{
-				SendWelcome(0, std::string("\0\1\2\4\5\6\7"));
+				SendWelcome(0, std::string("\0\1\2\4\5\6\7", 7));
 				return;
 			}
 		}
