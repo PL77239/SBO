@@ -95,67 +95,56 @@ void ManagementPacketClientAuth(Client* client)
 				else
 				{
 					client->enableStandardPackets();
-					if (handle == "")
-					{ // Create new handle
-						client->packetEnable(0x0E);
-						client->outbuf.clearBuffer();
-						client->outbuf.setSize(0x06);
-						client->outbuf.setOffset(0x06);
-						client->outbuf.setType(0x100);
-						client->outbuf.setSubType(0x182);
-						client->outbuf.append<uint8_t>(0); // Players garage exists
-						client->outbuf.append<uint8_t>(0); // if 2 additional int below. If 0 Team Center and Tuned Car Exchange is unavailable (Probably trial accounts as those didn't have access to these) If anything else both available but no need for additional int
-						//client->outbuf.append<uint32_t>(0xffffffff); // ???
-						client->outbuf.append<uint32_t>(0); // ???
-						client->outbuf.append<uint32_t>(0); // ???
-						// Team Data
-						client->initializeTeam();
-						client->outbuf.appendArray((uint8_t*)&client->teamdata, sizeof(client->teamdata));
-						// End of team data
 
-						client->outbuf.append<uint16_t>((client->privileges & 1) | 0x42); // Player Flag
-						client->outbuf.append<uint8_t>(4); // Bays/Cars (set 4 to initialize all bays
-						client->outbuf.append<uint32_t>(client->careerdata.ranking); // Ranking number
-						client->outbuf.append<uint8_t>(0); // No subgarages on new accounts						
+					// Existing-account payload from DB (only present when handle was set).
+					uint8_t loadedGarageCount = 0;
+					uint8_t loadedCarCount = 0;
+					uint32_t teamID = 0;
+					uint32_t teamLeaderID = 0;
+					std::string teamLeaderName = "";
+					std::string teamName = "";
+					std::string teamComment = "";
+					uint32_t teamSurvivalWin = 0;
+					uint32_t teamSurvivalLose = 0;
+					uint32_t teamCount = 0;
+					uint32_t teamFlag = 0;
+					uint8_t inTeam = 0;
+					uint8_t teamarea = 0;
 
-						client->outbuf.append<uint32_t>(timeGetTime()); // Time Played
-						client->outbuf.append<uint16_t>(0x24); // 0x24); // Course Section if 0xffff client will set 0x24 and below value to 3
-						client->outbuf.append<uint16_t>(0x03); // ??? Both of these check for 0xffff
-						client->outbuf.append<uint16_t>(0); // ???
-						client->outbuf.append<uint16_t>(0); // Beginners have this set to 0. appears to back the user out if lower than 1 - Doesn't any more when the additional byte below ranking number isn't set
-						client->outbuf.append<uint8_t>(client->currentCourse); // For beginner this needs to be 0. Linked to Course number needs to be 0, 1, or equal or greater than 0x15
-					}
-					else
-					{ // Load Existing Account
-						client->canSave = true;
+					if (handle != "")
+					{
 						client->initializeTeam();
 						client->initializeGarage();
 						client->handle = handle;
-						uint32_t teamID = 0;
-						uint32_t teamLeaderID = 0;
-						std::string teamLeaderName = "";
-						std::string teamName = "";
-						std::string teamComment = "";
-						uint32_t teamSurvivalWin = 0;
-						uint32_t teamSurvivalLose = 0;
-						uint32_t teamCount = 0;
-						uint32_t teamFlag = 0;
 
-						client->garagedata.garageCount = client->serverbuf.get<uint8_t>();
+						loadedGarageCount = client->serverbuf.get<uint8_t>();
+						client->garagedata.garageCount = loadedGarageCount;
+						for (uint32_t i = 0; i < loadedGarageCount; i++)
+							client->garagedata.garageType.push_back(client->serverbuf.get<uint8_t>());
 
-						for (uint32_t i = 0; i < client->garagedata.garageCount; i++) client->garagedata.garageType.push_back(client->serverbuf.get<uint8_t>());
-
-						uint8_t carCount = client->serverbuf.get<uint8_t>();
-						for (uint32_t i = 0; i < carCount; i++)
+						loadedCarCount = client->serverbuf.get<uint8_t>();
+						for (uint32_t i = 0; i < loadedCarCount; i++)
 						{
 							uint8_t bay = client->serverbuf.get<uint8_t>();
 							uint32_t carID = client->serverbuf.get<uint32_t>();
-							if (client->isValidCar(carID) == false) carID = Server::CARLIST::AE86_L_3_1985; // Replace invalid car with AE86 as they may only have 1 car and don't want to be left without a car.
+							float kms = client->serverbuf.get<float>();
+							CARMODS mods = { 0 };
+							PARTS parts = { 0 };
+							client->serverbuf.getArray((uint8_t*)&mods, sizeof(CARMODS));
+							client->serverbuf.getArray((uint8_t*)&parts, sizeof(PARTS));
+							uint32_t condition = client->serverbuf.get<uint32_t>();
+
+							if (bay >= client->garagedata.car.size())
+							{
+								client->logger->Log(Logger::LOGTYPE_CLIENT, L"Auth garage bay %u out of range for license %u — ignored.", bay, license);
+								continue;
+							}
+							if (client->isValidCar(carID) == false) carID = Server::CARLIST::AE86_L_3_1985;
 							client->garagedata.car[bay].carID = carID;
-							client->garagedata.car[bay].KMs = client->serverbuf.get<float>();
-							client->serverbuf.getArray((uint8_t*)&client->garagedata.car[bay].carMods, sizeof(CARMODS));
-							client->serverbuf.getArray((uint8_t*)&client->garagedata.car[bay].parts, sizeof(PARTS));
-							client->garagedata.car[bay].engineCondition = client->serverbuf.get<uint32_t>();
+							client->garagedata.car[bay].KMs = kms;
+							client->garagedata.car[bay].carMods = mods;
+							client->garagedata.car[bay].parts = parts;
+							client->garagedata.car[bay].engineCondition = condition;
 						}
 
 						uint32_t itemCount = client->serverbuf.get<uint32_t>();
@@ -166,8 +155,8 @@ void ManagementPacketClientAuth(Client* client)
 						}
 
 						client->serverbuf.getArray(&client->sign[0], sizeof(client->sign));
-						
-						uint8_t inTeam = client->serverbuf.get<uint8_t>();
+
+						inTeam = client->serverbuf.get<uint8_t>();
 						if (inTeam)
 						{
 							teamID = client->serverbuf.get<uint32_t>();
@@ -189,8 +178,88 @@ void ManagementPacketClientAuth(Client* client)
 								client->teammembers[i].area = client->serverbuf.get<uint8_t>();
 							}
 						}
-						uint8_t teamarea = client->serverbuf.get<uint8_t>();
+						teamarea = client->serverbuf.get<uint8_t>();
 						client->teamareaaccess = teamarea;
+
+						// If DB had cars but garagecount was 0/NULL (manual inserts), repair count
+						// before getCarCount() — it only scans garageCount*4 bays.
+						if (client->garagedata.garageCount == 0 && loadedCarCount > 0)
+						{
+							client->garagedata.garageType.clear();
+							client->garagedata.garageType.push_back(0);
+							client->garagedata.garageCount = 1;
+						}
+					}
+
+					// Manually-created DB accounts often have a handle but no garage/cars.
+					// Sending 0x0182 with "garage exists" and 0 bays crashes the 2.03 client.
+					uint32_t occupiedBays = 0;
+					for (auto& car : client->garagedata.car)
+						if (car.carID != 0xFFFFFFFF) occupiedBays++;
+					bool hasPlayableGarage = (handle != "" && occupiedBays > 0);
+					if (!hasPlayableGarage)
+					{ // Create new handle / first-time setup
+						if (handle != "")
+						{
+							client->logger->Log(Logger::LOGTYPE_CLIENT,
+								L"License %u has handle '%s' but no cars - falling back to character-creation 0x0182.",
+								license, client->logger->toWide(handle).c_str());
+							client->handle.clear();
+						}
+						client->packetEnable(0x0E);
+						client->outbuf.clearBuffer();
+						client->outbuf.setSize(0x06);
+						client->outbuf.setOffset(0x06);
+						client->outbuf.setType(0x100);
+						client->outbuf.setSubType(0x182);
+						client->outbuf.append<uint8_t>(0); // Players garage exists
+						client->outbuf.append<uint8_t>(0); // if 2 additional int below. If 0 Team Center and Tuned Car Exchange is unavailable
+						client->outbuf.append<uint32_t>(0);
+						client->outbuf.append<uint32_t>(0);
+						client->initializeTeam();
+						client->outbuf.appendArray((uint8_t*)&client->teamdata, sizeof(client->teamdata));
+
+						client->outbuf.append<uint16_t>((client->privileges & 1) | 0x42); // Player Flag
+						client->outbuf.append<uint8_t>(4); // Bays/Cars (set 4 to initialize all bays)
+						client->outbuf.append<uint32_t>(client->careerdata.ranking); // Ranking number
+						client->outbuf.append<uint8_t>(0); // No subgarages on new accounts
+
+						client->outbuf.append<uint32_t>(timeGetTime()); // Time Played
+						client->outbuf.append<uint16_t>(0x24); // Course Section
+						client->outbuf.append<uint16_t>(0x03);
+						client->outbuf.append<uint16_t>(0);
+						client->outbuf.append<uint16_t>(0);
+						client->outbuf.append<uint8_t>(client->currentCourse);
+					}
+					else
+					{ // Load Existing Account
+						client->canSave = true;
+
+						// Ensure garage metadata is valid before building 0x0182
+						if (client->garagedata.garageCount == 0 || client->garagedata.garageType.empty())
+						{
+							client->garagedata.garageType.clear();
+							client->garagedata.garageType.push_back(0);
+							client->garagedata.garageCount = 1;
+						}
+						if (client->garagedata.garageCount > 2) client->garagedata.garageCount = 2;
+						while (client->garagedata.garageType.size() < client->garagedata.garageCount)
+							client->garagedata.garageType.push_back(0);
+
+						if (activeCarBay < 0 || activeCarBay >= (int8_t)(client->garagedata.garageCount * 4) ||
+							client->garagedata.car[activeCarBay].carID == 0xFFFFFFFF)
+						{
+							// Pick first occupied bay
+							activeCarBay = 0;
+							for (uint32_t i = 0; i < client->garagedata.car.size(); i++)
+							{
+								if (client->garagedata.car[i].carID != 0xFFFFFFFF)
+								{
+									activeCarBay = (int8_t)i;
+									break;
+								}
+							}
+						}
 
 						client->outbuf.clearBuffer();
 						client->outbuf.setSize(0x06);
@@ -200,10 +269,9 @@ void ManagementPacketClientAuth(Client* client)
 						client->outbuf.append<uint8_t>(1); // Players garage exists
 						client->outbuf.appendString(client->handle, 0x10);
 						client->outbuf.append<uint32_t>(activeCarBay + 1); // Active Car Slot
-						client->outbuf.append<uint8_t>(0); // if 2 additional int below - 0: Disable Team Center and Tuned Car Exchange
-						//client->outbuf.append<uint32_t>(1); // Some int from above value
-						client->outbuf.append<uint32_t>(0); // ???
-						client->outbuf.append<uint32_t>(0); // ???
+						client->outbuf.append<uint8_t>(0); // 0: Disable Team Center and Tuned Car Exchange
+						client->outbuf.append<uint32_t>(0);
+						client->outbuf.append<uint32_t>(0);
 						// Team Data
 						if (!inTeam)
 							client->initializeTeam();
@@ -213,59 +281,38 @@ void ManagementPacketClientAuth(Client* client)
 							strncpy(&client->teamdata.name[0], teamName.c_str(), 0x10);
 							strncpy(&client->teamdata.leaderName[0], teamLeaderName.c_str(), 0x10);
 							strncpy(&client->teamdata.comment[0], teamComment.c_str(), 0x28);
-							client->teamdata.memberCount = teamCount;
-							client->teamdata.survivalLoses = teamSurvivalWin;
-							client->teamdata.survivalWins = teamSurvivalLose;
+							client->teamdata.memberCount = (uint8_t)min(teamCount, 255u);
+							client->teamdata.survivalWins = teamSurvivalWin;
+							client->teamdata.survivalLoses = teamSurvivalLose;
 							client->teamdata.inviteOnly = teamFlag & 0x01 ? 1 : 0;
 							client->teamdata.unknown4 = 0;
 							client->teamdata.unknown5 = 0;
 						}
 						client->outbuf.appendArray((uint8_t *)&client->teamdata, sizeof(client->teamdata));
-						// End of team data
 
-						client->outbuf.append<uint16_t>((client->privileges & 1) | 0x42); // Player flag. 1: Is GM? Also allow Battle and collisions with 0x42 flag
-						client->outbuf.append<uint8_t>(min(1, client->garagedata.garageCount) * 4); // Car/Bay Count. Set 4 to initialize 4 bays otherwise issues in beginners
+						client->outbuf.append<uint16_t>((client->privileges & 1) | 0x42); // Player flag
+						client->outbuf.append<uint8_t>((uint8_t)(min(1, (int)client->garagedata.garageCount) * 4)); // Car/Bay Count
 						client->outbuf.append<uint32_t>(client->careerdata.ranking); // Ranking number
-						if (client->garagedata.garageCount > 2) client->garagedata.garageCount = 2;
-						client->outbuf.append<uint8_t>(client->garagedata.garageCount); // Below value count 2 ints per value
+						client->outbuf.append<uint8_t>(client->garagedata.garageCount);
 						for (int8_t i = 0; i < client->garagedata.garageCount; i++)
 						{
 							client->outbuf.append<uint32_t>(i * 2); // Garage number 0: main, 1: second
-							client->outbuf.append<uint32_t>(client->garagedata.garageType[i]); // Garage Type	
+							client->outbuf.append<uint32_t>(client->garagedata.garageType[i]); // Garage Type
 						}
 
 						client->outbuf.append<uint32_t>(timeGetTime()); // Time Played
-						//RAND_poll();
 						srand(timeGetTime());
-						int32_t rng = (rand() & 0xFF) << 24 || (rand() & 0xFF) << 16 || (rand() & 0xFF) << 8 || (rand() & 0xFF);
-						//RAND_bytes((uint8_t*)&rng, sizeof(rng));
-						client->startJunction = startPositions[rng % (sizeof(startPositions) / 4)][0];//0x22 + tempValue1++;//(rng % 10);
-						client->startDistance = startPositions[rng % (sizeof(startPositions) / 4)][1];
-						client->outbuf.append<uint16_t>(client->notBeginner ? client->startJunction : 0xffff); // Course Section - Starting at 0x22 works with 0xFFFF below.
-						client->outbuf.append<uint16_t>(client->notBeginner ? client->startDistance : 0xffff); // ??? Both of these check for 0xffff
-						client->outbuf.append<uint16_t>(0xffff); // ???
-						client->outbuf.append<uint16_t>(client->notBeginner ? 0xffff : 0); // appears to back the user out if lower than 1 - Doesn't any more when the additional byte below ranking number isn't set
+						uint32_t rng = ((rand() & 0xFF) << 24) | ((rand() & 0xFF) << 16) | ((rand() & 0xFF) << 8) | (rand() & 0xFF);
+						uint32_t startCount = (uint32_t)(sizeof(startPositions) / sizeof(startPositions[0]));
+						client->startJunction = startPositions[rng % startCount][0];
+						client->startDistance = startPositions[rng % startCount][1];
+						client->outbuf.append<uint16_t>(client->notBeginner ? client->startJunction : 0xffff);
+						client->outbuf.append<uint16_t>(client->notBeginner ? client->startDistance : 0xffff);
+						client->outbuf.append<uint16_t>(0xffff);
+						client->outbuf.append<uint16_t>(client->notBeginner ? 0xffff : 0);
 						if (client->notBeginner == false) client->currentCourse = 0x15;
-						client->outbuf.append<uint8_t>(client->currentCourse); // Course number
+						client->outbuf.append<uint8_t>(client->currentCourse);
 
-						/*
-						0. Main Course / Beginner Course
-						1. Shop Course
-						2. Car Parts Course
-						3. Freeway A
-						4. Freeway B
-						5. Survival Course
-						6. Time Attack A
-						7. Time Attack B
-						21. Beginners Course
-						*/
-
-						if (client->garagedata.garageCount == 0)
-						{
-							client->garagedata.garageType.clear();
-							client->garagedata.garageType.push_back(0);
-							client->garagedata.garageCount = static_cast<uint8_t>(client->garagedata.garageType.size());
-						}
 						client->setActiveCar(activeCarBay);
 					}
 				}
