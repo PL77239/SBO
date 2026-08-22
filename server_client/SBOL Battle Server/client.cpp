@@ -2505,7 +2505,8 @@ void Client::enableShopPackets()
 	packetDisable(0x05);
 	packetDisable(0x07);
 	packetEnable(0x09);
-	packetDisable(0x0C);
+	// Keep 0x0C enabled: 2.03 Data/"info" menu needs 0x0C80/0x0C81 even if opened around shop transitions.
+	packetEnable(0x0C);
 	packetEnable(0x11);
 	packetEnable(0x12);
 	packetDisable(0x15);
