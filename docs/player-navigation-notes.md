@@ -49,6 +49,7 @@ Server junction IDs of note:
 - `0x00DC` — Team Center (commented spawn; often blocked by `0x0182` feature byte `0`)
 - `0x06BE` — **Parts Shop course** roadside shop marker (“power-up” / green wrench shield). Live HUD example: `POSITION: 06BE:…:0203` near 浜崎橋 on the mini-map; Course Guide shows **PARTS SHOP COURSE** with the wrench badge. Drive into this marker to open Parts workshops (same idea as OVERHAUL on Car Shop).
 - `0x0848` — **BODY** tune shop on Parts course. Live HUD: `POSITION: 0848:012A:0099` at **Ichinohashi JCT** (一ノ橋); Course Guide shows a **BODY** oval. Split here: left → Meguro / 目黒線 (Route 2), right → C1 Outer.
+- `0x075A` — **DRIVE TRAIN** shop on Parts course. Live HUD: `POSITION: 075A:01C7:07F3` at **Tanimachi JCT** (谷町); Course Guide shows **DRIVE TRAIN** on the left branch (Shibuya Route 3 / 渋谷線), right → C1 Outer.
 
 ## Courses vs roadside buildings
 
@@ -71,6 +72,7 @@ Parts workshops (engine / aero / **BODY** / suspension shops, etc.) are **roadsi
 |------|----------|----------------|
 | Parts course entrance (wrench) | `0x06BE` | near 浜崎橋; **PARTS SHOP COURSE** badge |
 | **BODY** tune | `0x0848` | **Ichinohashi JCT**; Course Guide **BODY** oval; `0848:012A:0099` |
+| **DRIVE TRAIN** | `0x075A` | **Tanimachi JCT**; left → Shibuya線; `075A:01C7:07F3` |
 
 Drive into the labeled marker to open that shop UI. You can also reach the course via **Select Destination → PARTS SHOP** / **Back to PA Menu → Go to Shops** (not via an OVERHAUL-style door on the Car Shop loop).
 
