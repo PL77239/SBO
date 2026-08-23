@@ -47,9 +47,10 @@ Server junction IDs of note:
 - `0x0024` — Main start
 - `0x01CD` — Outer C1 start (commented)
 - `0x00DC` — Team Center (commented spawn; often blocked by `0x0182` feature byte `0`)
-- `0x06BE` — **Parts Shop course** roadside shop marker (“power-up” / green wrench shield). Live HUD example: `POSITION: 06BE:…:0203` near 浜崎橋 on the mini-map; Course Guide shows **PARTS SHOP COURSE** with the wrench badge. Drive into this marker to open Parts workshops (same idea as OVERHAUL on Car Shop).
-- `0x0848` — **BODY** tune shop on Parts course. Live HUD: `POSITION: 0848:012A:0099` at **Ichinohashi JCT** (一ノ橋); Course Guide shows a **BODY** oval. Split here: left → Meguro / 目黒線 (Route 2), right → C1 Outer.
-- `0x075A` — **DRIVE TRAIN** shop on Parts course. Live HUD: `POSITION: 075A:01C7:07F3` at **Tanimachi JCT** (谷町); Course Guide shows **DRIVE TRAIN** on the left branch (Shibuya Route 3 / 渋谷線), right → C1 Outer.
+- `0x06BE` — **Parts Shop course** roadside shop marker (“power-up” / green wrench shield). Live HUD example: `POSITION: 06BE:…:0203` near 浜崎橋 on the mini-map; Course Guide shows **PARTS SHOP COURSE** with the wrench badge.
+- `0x0848` — **BODY** tune shop on Parts course. Live HUD: `POSITION: 0848:012A:0099` at **Ichinohashi JCT** (一ノ橋); Course Guide shows a **BODY** oval. Split: left → Meguro / 目黒線 (Route 2), right → C1 Outer.
+- `0x075A` — **DRIVE TRAIN** shop on Parts course. Live HUD: `POSITION: 075A:01C7:07F3` at **Tanimachi JCT** (谷町); Course Guide **DRIVE TRAIN** on left branch (Shibuya Route 3 / 渋谷線), right → C1 Outer.
+- `0x086D` — **EXTERIOR** shop on Parts course. Live HUD: `POSITION: 086D:01D4:08F3` at **Edobashi JCT** (江戸橋); Course Guide **EXTERIOR** oval. Split: left → Mukojima / 向島線 (Route 6), right → C1 Outer.
 
 ## Courses vs roadside buildings
 
@@ -66,17 +67,39 @@ On **Car Shop** course, roadside exits are Car Shop services, e.g.:
 - **OVERHAUL** — engine refresh / overhaul UI (CP cost). Not the Parts course.
 - Car dealer buildings — buy / sell / tickets.
 
-Parts workshops (engine / aero / **BODY** / suspension shops, etc.) are **roadside markers on the Parts Shop course**, not one shared door. Field pins so far:
+### Parts Shop course — roadside markers (live pins)
 
-| Shop | Junction | Landmark / HUD |
-|------|----------|----------------|
-| Parts course entrance (wrench) | `0x06BE` | near 浜崎橋; **PARTS SHOP COURSE** badge |
-| **BODY** tune | `0x0848` | **Ichinohashi JCT**; Course Guide **BODY** oval; `0848:012A:0099` |
+Workshops are **separate Course Guide ovals on the Parts course**, not one shared door and not the HOME garage. Drive into the labeled marker to open that shop UI.
+
+| Shop | Junction | Landmark / POSITION |
+|------|----------|---------------------|
+| Parts course entrance (wrench / “power-up”) | `0x06BE` | near 浜崎橋; **PARTS SHOP COURSE** badge; `06BE:…:0203` |
+| **BODY** tune | `0x0848` | **Ichinohashi JCT**; `0848:012A:0099` |
 | **DRIVE TRAIN** | `0x075A` | **Tanimachi JCT**; left → Shibuya線; `075A:01C7:07F3` |
+| **EXTERIOR** | `0x086D` | **Edobashi JCT**; left → Mukojima線; `086D:01D4:08F3` |
 
-Drive into the labeled marker to open that shop UI. You can also reach the course via **Select Destination → PARTS SHOP** / **Back to PA Menu → Go to Shops** (not via an OVERHAUL-style door on the Car Shop loop).
+**DRIVE TRAIN** opens **PARTS SHOP DRIVE TRAIN** with:
+
+| Menu | Meaning |
+|------|---------|
+| **TRANS MISSION** | Transmission |
+| **DIF** | Differential |
+| **SUS** | Suspension |
+| **TIRE & BRAKE** | Tires & Brakes |
+
+**HOME / MAIN GARAGE** (while on Parts) is the temporary course garage: pick **DRIVE**, or open garage **SETTING 1/2/3** (spring / damper / turbo boost, etc.). That is **setup**, not a roadside Parts marker.
+
+You can also reach the Parts course via **Select Destination → PARTS SHOP** / **Back to PA Menu → Go to Shops** (not via an OVERHAUL-style door on the Car Shop loop).
 
 PA destination list labels include: **CAR SHOP**, **PARTS SHOP**, **MERCHANDISE SHOP**, **TUNED CAR EXCHANGE**, **Return to PA**, **Go to Shops**.
+
+### Map preview
+
+Annotated preview (Wikimedia Shutoko / C1 / Wangan base + in-game C1 HUD tiles + `SHUTO.DPP` mesh with the pins above):
+
+![Parts Shop markers on Shutoko/C1](map_preview_parts_shops.png)
+
+Junction IDs on the mesh panel are `SHUTO.DPP` node indices (same values as HUD `POSITION` junction). Geo pins are landmark-aligned on the public Shutoko schematic.
 
 ## Safe Mode
 
@@ -94,8 +117,9 @@ PA destination list labels include: **CAR SHOP**, **PARTS SHOP**, **MERCHANDISE 
 ## Full map data (dev)
 
 - C1 HUD tiles in `TEX/mm_new.MIA` are **not** the full course.
-- Full mesh: `game_client/data/COURSE/SHUTO.DPP` (~2276 nodes).
+- Full mesh: `game_client/data/COURSE/SHUTO.DPP` (~2276 nodes; junction ID ≈ node index).
 - EXIT assets under `COURSE/EXIT/` (Yaesu, Edobashi, Ariake, Shiba, Hamasaki, Ueno, etc.).
+- Parts shop pin preview: `docs/map_preview_parts_shops.png` (Shutoko schematic + HUD + DPP).
 
 ## Web research (首都高バトルOnline vs 2025)
 
