@@ -1085,11 +1085,13 @@ void Client::clearBattle()
 		battle.challenger->battle.timeout = 0;
 		battle.challenger->battle.challenger = nullptr;
 		battle.challenger->battle.initiator = false;
+		battle.challenger->battle.isNPC = false;
 	}
 	battle.status = BATTLESTATUS::BS_NOT_IN_BATTLE;
 	battle.timeout = 0;
 	battle.challenger = nullptr;
 	battle.initiator = false;
+	battle.isNPC = false;
 	if (currentRival != nullptr)
 		currentRival = nullptr;
 }
@@ -1125,7 +1127,10 @@ void Client::getRivals()
 		}
 		newRival.SetID(i);
 		//newRival.Random();
+		// Space rivals along the route, then Tick once so join/challenge
+		// packets carry a real junction instead of (0,0,0).
 		newRival.SpaceTick(i, 12);
+		newRival.Tick();
 		rivals.push_back(newRival);
 	}
 }
@@ -2119,6 +2124,16 @@ void Client::SendCarData()
 }
 void Client::SendBattleChallengeNPC(uint16_t RivalID, uint32_t _time)
 {
+	// Resolve rival before mutating battle state so a miss does not leave isNPC stuck.
+	currentRival = getRival(RivalID);
+	if (currentRival == nullptr)
+	{
+		battle.status = BATTLESTATUS::BS_NOT_IN_BATTLE;
+		battle.isNPC = false;
+		SendBattleNPCAbort(0);
+		return;
+	}
+
 	battle.isNPC = true;
 	battle.status = BATTLESTATUS::BS_IN_BATTLE;
 	battle.SP = battle.lastSP = INITIALBATTLE_SP;
@@ -2126,33 +2141,22 @@ void Client::SendBattleChallengeNPC(uint16_t RivalID, uint32_t _time)
 	battle.initiator = true;
 	battle.spCount = 0;
 	battle.timeout = 0;
-	currentRival = getRival(RivalID);
 
-	if (currentRival != nullptr)
-	{
-		setRivalStatus(currentRival->GetTeamData().teamID, currentRival->GetTeamData().memberID, Rival::RIVALSTATUS::RS_SHOW);
-		outbuf.clearBuffer();
-		outbuf.setSize(0x06);
-		outbuf.setOffset(0x06);
-		outbuf.setType(0x500);
-		outbuf.setSubType(0x584);
-		outbuf.append<uint16_t>(courseID); // Client's course ID
-		outbuf.append<uint16_t>(RivalID); // Rival's ID (the ID assigned as it joined the course)
-		outbuf.append<uint32_t>(_time); // Time
-		outbuf.appendArray((uint8_t*)currentRival->GetRivalDifficultyPtr(), sizeof(RIVALDIFFICULTY)); // Difficulty settings. Has values that specify how the NPC races and traffic
-		outbuf.append<uint16_t>(currentRival->GetPosition().location2); // Distance
-		outbuf.append<uint16_t>(currentRival->GetPosition().location3); // Unknown Position
-		outbuf.append<uint16_t>(currentRival->GetPosition().location1); // Junction
-		outbuf.append<uint32_t>(currentRival->GetPosition().time); // Time
-		Send();
-		return;
-	}
-	else
-	{
-		// Rival not found
-		battle.status = BATTLESTATUS::BS_NOT_IN_BATTLE;
-		SendBattleNPCAbort(0);
-	}
+	setRivalStatus(currentRival->GetTeamData().teamID, currentRival->GetTeamData().memberID, Rival::RIVALSTATUS::RS_SHOW);
+	outbuf.clearBuffer();
+	outbuf.setSize(0x06);
+	outbuf.setOffset(0x06);
+	outbuf.setType(0x500);
+	outbuf.setSubType(0x584);
+	outbuf.append<uint16_t>(courseID); // Client's course ID
+	outbuf.append<uint16_t>(RivalID); // Rival's ID (the ID assigned as it joined the course)
+	outbuf.append<uint32_t>(_time); // Time
+	outbuf.appendArray((uint8_t*)currentRival->GetRivalDifficultyPtr(), sizeof(RIVALDIFFICULTY)); // Difficulty settings. Has values that specify how the NPC races and traffic
+	outbuf.append<uint16_t>(currentRival->GetPosition().location2); // Distance
+	outbuf.append<uint16_t>(currentRival->GetPosition().location3); // Unknown Position
+	outbuf.append<uint16_t>(currentRival->GetPosition().location1); // Junction
+	outbuf.append<uint32_t>(currentRival->GetPosition().time); // Time
+	Send();
 }
 void Client::SendBattleChallenge(uint16_t challengeID, uint16_t clientID, uint32_t _time)
 {
@@ -2221,6 +2225,8 @@ void Client::SendBattleNPCAbort(uint8_t res)
 	outbuf.setSubType(0x585);
 	outbuf.append<uint8_t>(res);
 	battle.status = BATTLESTATUS::BS_NOT_IN_BATTLE;
+	battle.isNPC = false;
+	currentRival = nullptr;
 	Send();
 }
 void Client::SendBattleStart()
