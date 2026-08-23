@@ -4,7 +4,8 @@ Private-server field notes and maps for **Shutokou Battle Online** (client ~v2.0
 
 | Doc | Contents |
 |-----|----------|
-| [player-field-guide.md](player-field-guide.md) | **Main guide** — HUD, courses, shops, rivals, BGM, resolution, maps (from live play) |
+| [player-field-guide.md](player-field-guide.md) | **Main guide** — HUD, courses, shops, rivals, BGM, engine SE, resolution, maps (from live play) |
+| `time_attack/` (branch `cursor/time-attack-rewards-365a`) | Time Attack base-fare CP/XP module + integration notes (download that folder alone) |
 | [GAMEPLAY/readme.md](GAMEPLAY/readme.md) | Screenshot gallery (live play) |
 | [vps-hosting.md](vps-hosting.md) | Run DB + Battle on a public VPS (ports, firewall, `SERVER.INI`) |
 | [player-navigation-notes.md](player-navigation-notes.md) | Earlier navigation scratchpad (overlapping; prefer the field guide) |

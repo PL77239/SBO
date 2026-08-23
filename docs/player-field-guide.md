@@ -159,16 +159,25 @@ Temporary course garage — **DRIVE**, or **SETTING 1/2/3** (e.g. spring rate, d
 
 | Topic | Detail |
 |-------|--------|
-| Where they spawn | **Main** only, and **not** Beginner |
+| Where they spawn | **Main** only, and **not** Beginner (`notBeginner` must be true) |
 | Look | Ghost visuals until challenged (no solid collision) |
-| Challenge | **PASSING** (`C`) → `0x0504` NPC / `0x0500` PvP |
-| Safe Mode | Blocks being challenged for PvP; does not block you challenging NPCs with Pass |
-| Spawn count | Hardcoded in Battle Server `Client::getRivals()` — loop currently `for (i = 0; i < 3; …)` with IDs `800`, `1`, `2`, … |
-| Data | `server_client/SBOL Battle Server/data/rivals/*.json` (~241 members). Cap announced to client: `COURSE_NPC_LIMIT` = 100 |
-| Increase bots | Edit that loop count in **your existing tree**, rebuild **Battle Server only**, restart Battle (no full repo re-download). Do **not** delete `lib\Debug` / `lib\win32-debug` |
-| Disable | Uncomment `DISABLE FOR LIVE` returns in `getRivals()` / `SendRivalPosition()`, or `#define DISABLE_BATTLE` |
+| Challenge | **PASSING** (`C`) → client `0x0504` NPC / `0x0500` PvP |
+| Safe Mode | Blocks **being** PvP-challenged; does **not** block you challenging NPCs |
+| Spawn count | `Client::getRivals()` — loop `for (i < 3)` with DB rival IDs `800`, `1`, `2` (Keisuke + Rolling Guy #2/#3). Course entity IDs sent to client are `0`, `1`, `2` |
+| Data | `server_client/SBOL Battle Server/data/rivals/*.json` (~241 members). Cap: `COURSE_NPC_LIMIT` = 100 |
+| Increase bots | Edit that loop in **your tree**, rebuild **Battle Server only**, restart Battle. Do **not** delete `lib\Debug` / `lib\win32-debug` |
+| Disable | Uncomment `DISABLE FOR LIVE` returns, or `#define DISABLE_BATTLE` |
 
-Rewards for rival wins already use `giveCP()` / `addExp()` (battle path). Time Attack finish rewards are **not** wired yet (see §10).
+### If PASSING (`C`) does nothing
+
+1. Confirm **COURSE NAME = Main** and you are past Beginner (rivals never spawn on shop / TA / beginner).
+2. Confirm ghosts appear (join packet `0x0480`). No ghosts → empty `rivals` list → challenge always aborts.
+3. Challenge uses the **course entity ID** (`0`–`2`), not DB id `800`. Server looks up `getRival(id)` from the local spawn list.
+4. Shop / PA mode disables battle packets (`packetDisable(0x05)`). Must be on course with `enableCoursePackets()`.
+5. Battle Server log lines to watch: `challenging NPC ID` / `challenging invalid NPC` / rival abort `0x0585`.
+6. Known server bugs that break challenges: spawn with position still `(0,0,0)` until first `Tick()`; `clearBattle()` / failed challenge leaving `battle.isNPC` stuck — fixed on branch `cursor/rival-npc-challenge-365a`.
+
+Rival wins already call `giveCP()` / `addExp()` (NPC `WinXP()` is still stubbed to `0`). Time Attack rewards: see §10 and the `time_attack/` folder branch.
 
 ---
 
@@ -183,7 +192,32 @@ Files: `game_client/data/BGM/*.ogg` (Ogg Vorbis, stereo ~44.1 kHz).
 | Menus | `mainmenu.ogg`, `garage.ogg`, `parking.ogg` |
 
 Client matches patterns like `freerun*.ogg`. **Replace a file** (same name) → restart client. No server rebuild.  
-Engine SE is separate (`SE/*.dls`).
+Engine SE is separate (`SE/*.dls`) — see §8b.
+
+---
+
+## 8b. Engine SE swap / normalize (`AllEngine.dls`)
+
+Do **not** drop mixed WAV banks straight into the game. Stock engines live in `game_client/data/SE/AllEngine.dls` (DirectMusic DLS):
+
+| Fact | Stock bank |
+|------|------------|
+| Instruments / waves | ~46 / ~60 |
+| Format | Mono **Microsoft ADPCM**, **22.05 kHz**, 4-bit |
+| Loops | Short (~1–2 s), with loop metadata |
+| RPM layers | Several **regions** per engine; **unity notes** ~MIDI 55–70 |
+| Loudness | Per-region **attenuation** in the DLS, not only WAV peaks |
+
+**Pipeline**
+
+1. Backup `AllEngine.dls`. Open in a DLS editor (e.g. Awave Studio). Export each wave and note instrument, region, unity note, attenuation, loop length.
+2. Source **steady RPM loops** (mono). Avoid stereo cinematic takes / gear-shift edits.
+3. In Audacity/Reaper: HPF ~40–80 Hz → light EQ to a house curve → **match RMS (or short-loop LUFS) to the stock layer you replace** (not peak-normalize alone) → soft limit ≈ −1 dBTP → resample **22050 Hz mono**.
+4. Set loop points on zero-crossings; keep lengths in the same ballpark as stock.
+5. Re-import as Microsoft ADPCM; keep stock **region map / unity notes / attenuation** unless you are retuning the whole car.
+6. Replace `AllEngine.dLS`, restart client. `RaceSE.dls` / `SystemSE.dls` are separate.
+
+Peak-only “normalize” across packs still sounds uneven because RMS/timbre differ. Same rate/channels/codec + same RMS target + same region layout = usable swaps.
 
 ---
 
@@ -202,12 +236,21 @@ NVIDIA **NIS/DLSS GitHub SDKs** need DX11+/Vulkan integration — not a drop-in 
 
 ---
 
-## 10. Time Attack rewards (planned)
+## 10. Time Attack rewards
 
-**Possible:** grant CP + XP (→ level) when finish time ≤ configured thresholds.
+**Where to code:** Battle Server only — not the DB service.
 
-Already available: `giveCP()`, `addExp()`, `saveClientData()`, TA courses A/B.  
-**Not done yet:** server handler for TA finish time → reward table (needs finish packet + anti-farm rules). Client can already show `* Rank settled at %d (Official) *`.
+| Piece | Location |
+|-------|----------|
+| Course IDs | `Client::COURSE_TIMEATTACKA` / `B` (`client.h`) |
+| Grant APIs | `Client::giveCP()`, `Client::addExp()`, then `Server::saveClientData()` |
+| Leave / transfer | `ClientPacketCourseDetails` case `0x0302` (good hook for **base completion fare** until the official finish packet is mapped) |
+| Finish time packet | Still unmapped (`0x0800` / `0x0D00` / `0x1300` / `0x1400` are currently `DoNothing`) — log unknown types while driving TA to find it |
+| Rival-style pattern | Mirror `processBattleWin()` / `SendBattleNPCFinish()` |
+
+**Base fare without personal records:** yes — that is the right first step. Pay a flat CP + XP for completing a TA run (leave course after entering A/B, or later: on verified finish). Add time-tier bonuses later once you have times and the finish packet. Keep a short cooldown so exit-farming does not print money.
+
+Self-contained design + drop-in sources: repo folder **`time_attack/`** on branch `cursor/time-attack-rewards-365a` (download that one folder from the PR).
 
 ---
 
@@ -253,3 +296,5 @@ Remake PA names (平和島, 辰巳, 代々木, 芝浦, 箱崎) are geography onl
 | dgVoodoo Glide vs DirectX confusion | §9 |
 | Rival ghosts / Passing / bot count | §7 |
 | CURRENT TRACK / Metropolis As | §1, §8 |
+| Engine SE / DLS normalize | §8b |
+| Time Attack CP/XP | §10 + `time_attack/` branch |
