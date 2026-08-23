@@ -85,3 +85,42 @@ PA destination list labels include: **CAR SHOP**, **PARTS SHOP**, **MERCHANDISE 
 - C1 HUD tiles in `TEX/mm_new.MIA` are **not** the full course.
 - Full mesh: `game_client/data/COURSE/SHUTO.DPP` (~2276 nodes).
 - EXIT assets under `COURSE/EXIT/` (Yaesu, Edobashi, Ariake, Shiba, Hamasaki, Ueno, etc.).
+
+## Web research (首都高バトルOnline vs 2025)
+
+Search Japanese title **首都高バトルOnline** (Genki PC, service ~2003–2005; official was `sb-online.genki.co.jp`).  
+Do **not** confuse with Steam/PS **首都高バトル (2025)** / Tokyo Xtreme Racer remake — most current JP “PA解放” guides are for that remake (drive into 辰巳PA / 平和島PA / 箱崎PA, etc.).
+
+### Period Online sources (relevant to this client)
+
+From [4Gamer 2004-07-07](https://www.4gamer.net/games/007/G000798/20040707211303/):
+
+- **運転代行 (valet) tickets**
+  - `MOVE MAIN COURSE` → **三宅坂JCT** on Main
+  - `MOVE CAR SHOP` → Car Shop course
+  - `MOVE PARTS SHOP` → Parts Shop course
+- **お守り** → permanent Safe Mode until course-out
+- **ライバルマップ** → show NPC names on map
+- **CPカード** → trade CP via team garage, etc.
+
+From [4Gamer 2004-10-06](https://www.4gamer.net/games/007/G000798/20041006174622/):
+
+- Fixed **グッズショップ** at **C1外回り・竹橋JCT** was closed
+- Replaced by **ショップカー** (mobile shops): pass them with **パッシング** to buy
+  - A-ZONE ×2, B-ZONE ×4, 湾岸/横羽 up/down ×2 each
+
+From [4Gamer 2003-08-28](https://www.4gamer.net/games/007/G000798/20030828202934/):
+
+- **B-ZONE** added: 深川線〜湾岸線〜台場線〜環状 (Fukagawa / Wangan / Daiba / loop), longer/straighter than A-ZONE; Rainbow Bridge
+
+From [4Gamer 2003-05-27](https://www.4gamer.net/games/007/G000798/20030527211442/):
+
+- **C1外回り** added after **C1内回り**
+
+### Live Course Guide match
+
+Player screenshot on Main at **Tatsumi JCT** with splits to **TIME ATTACK A** / **湾岸線** fits the Online-era Wangan / B-ZONE layout (辰巳 is a real Wangan area). Follow Course Guide branches for course transfers when labeled.
+
+### Remake PA names (geography only; unlock rules differ)
+
+Useful as real Shutoko landmarks, not as Online menu rules: 平和島PA, 辰巳PA, 代々木PA, 芝浦PA, 箱崎PA (and direction-restricted approaches). Online shops were **separate courses** + later **shop cars**, not the 2025 “enter PA ramp to unlock map icon” system.
