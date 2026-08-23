@@ -1,6 +1,8 @@
 #include "TimeAttackRewards.h"
 #include "client.h"
 #include "server.h"
+#include <string>
+#include <cstdio>
 
 namespace
 {
@@ -69,7 +71,8 @@ namespace
 
 		char msg[128];
 		sprintf_s(msg, "TIME ATTACK: +%u CP / +%u XP", cp, xp);
-		client->SendAnnounceMessage(std::string(msg), RGB(80, 200, 120), client->driverslicense);
+		std::string announce(msg);
+		client->SendAnnounceMessage(announce, RGB(80, 200, 120), client->driverslicense);
 		return true;
 	}
 }
