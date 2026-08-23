@@ -93,6 +93,23 @@ You can also reach the Parts course via **Select Destination → PARTS SHOP** / 
 
 PA destination list labels include: **CAR SHOP**, **PARTS SHOP**, **MERCHANDISE SHOP**, **TUNED CAR EXCHANGE**, **Return to PA**, **Go to Shops**.
 
+### Entering / leaving Car Shop & Parts courses
+
+These are **separate courses**, not Main C1 off-ramps (unlike e.g. Tatsumi → TIME ATTACK A).
+
+| Action | How |
+|--------|-----|
+| **Enter Car Shop** | Locations → Go to PA → **Select Destination → CAR SHOP**, or valet **MOVE CAR SHOP COURSE** (`2110`) |
+| **Enter Parts Shop** | Same hub → **PARTS SHOP**, or valet **MOVE PARTS SHOP COURSE** (`2111`) |
+| **Leave either shop course** | **MAP → EXIT COURSE** → Main Menu / Locations (menu exit, not a roadside ramp) |
+| **Back to Main via valet** | **MOVE MAIN COURSE** lands at **Miyakezaka JCT** (三宅坂) on Main |
+
+Course IDs: Main `0`, Car Shop `1`, Parts `2`.
+
+On the shop courses themselves, Course Guide ovals (**OVERHAUL**, **BODY**, **DRIVE TRAIN**, …) are **workshop doors**, not “exit to Main”.
+
+![Shop course enter/leave](map_txr_shop_course_exits.png)
+
 ### Map preview
 
 Compact TXR-style C1 schematic with the pins above:
