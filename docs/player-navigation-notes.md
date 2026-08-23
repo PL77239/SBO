@@ -95,7 +95,11 @@ PA destination list labels include: **CAR SHOP**, **PARTS SHOP**, **MERCHANDISE 
 
 ### Map preview
 
-Annotated preview (Wikimedia Shutoko / C1 / Wangan base + in-game C1 HUD tiles + `SHUTO.DPP` mesh with the pins above):
+Compact TXR-style C1 schematic with the pins above:
+
+![Parts Shop TXR-style map](map_txr_parts_shops.png)
+
+Wider reference (Wikimedia Shutoko + HUD + `SHUTO.DPP` mesh):
 
 ![Parts Shop markers on Shutoko/C1](map_preview_parts_shops.png)
 
@@ -119,7 +123,7 @@ Junction IDs on the mesh panel are `SHUTO.DPP` node indices (same values as HUD 
 - C1 HUD tiles in `TEX/mm_new.MIA` are **not** the full course.
 - Full mesh: `game_client/data/COURSE/SHUTO.DPP` (~2276 nodes; junction ID ≈ node index).
 - EXIT assets under `COURSE/EXIT/` (Yaesu, Edobashi, Ariake, Shiba, Hamasaki, Ueno, etc.).
-- Parts shop pin preview: `docs/map_preview_parts_shops.png` (Shutoko schematic + HUD + DPP).
+- Parts shop pin previews: `docs/map_txr_parts_shops.png` (TXR-style), `docs/map_preview_parts_shops.png` (Shutoko + HUD + DPP).
 
 ## Web research (首都高バトルOnline vs 2025)
 
