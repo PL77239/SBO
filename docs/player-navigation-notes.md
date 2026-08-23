@@ -48,6 +48,7 @@ Server junction IDs of note:
 - `0x01CD` — Outer C1 start (commented)
 - `0x00DC` — Team Center (commented spawn; often blocked by `0x0182` feature byte `0`)
 - `0x06BE` — **Parts Shop course** roadside shop marker (“power-up” / green wrench shield). Live HUD example: `POSITION: 06BE:…:0203` near 浜崎橋 on the mini-map; Course Guide shows **PARTS SHOP COURSE** with the wrench badge. Drive into this marker to open Parts workshops (same idea as OVERHAUL on Car Shop).
+- `0x0848` — **BODY** tune shop on Parts course. Live HUD: `POSITION: 0848:012A:0099` at **Ichinohashi JCT** (一ノ橋); Course Guide shows a **BODY** oval. Split here: left → Meguro / 目黒線 (Route 2), right → C1 Outer.
 
 ## Courses vs roadside buildings
 
@@ -64,7 +65,14 @@ On **Car Shop** course, roadside exits are Car Shop services, e.g.:
 - **OVERHAUL** — engine refresh / overhaul UI (CP cost). Not the Parts course.
 - Car dealer buildings — buy / sell / tickets.
 
-Parts workshops (engine / aero / suspension shops, etc.) are on the **Parts Shop course**. After you transfer onto that course, look for the **green wrench shield** Course Guide marker at junction **`0x06BE`** and drive into it — that is the shop entrance, not a Main-course rival spawn. You can also reach the course via **Select Destination → PARTS SHOP** / **Back to PA Menu → Go to Shops** (not via an OVERHAUL-style door on the Car Shop loop).
+Parts workshops (engine / aero / **BODY** / suspension shops, etc.) are **roadside markers on the Parts Shop course**, not one shared door. Field pins so far:
+
+| Shop | Junction | Landmark / HUD |
+|------|----------|----------------|
+| Parts course entrance (wrench) | `0x06BE` | near 浜崎橋; **PARTS SHOP COURSE** badge |
+| **BODY** tune | `0x0848` | **Ichinohashi JCT**; Course Guide **BODY** oval; `0848:012A:0099` |
+
+Drive into the labeled marker to open that shop UI. You can also reach the course via **Select Destination → PARTS SHOP** / **Back to PA Menu → Go to Shops** (not via an OVERHAUL-style door on the Car Shop loop).
 
 PA destination list labels include: **CAR SHOP**, **PARTS SHOP**, **MERCHANDISE SHOP**, **TUNED CAR EXCHANGE**, **Return to PA**, **Go to Shops**.
 
