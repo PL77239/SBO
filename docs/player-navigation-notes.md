@@ -47,6 +47,7 @@ Server junction IDs of note:
 - `0x0024` — Main start
 - `0x01CD` — Outer C1 start (commented)
 - `0x00DC` — Team Center (commented spawn; often blocked by `0x0182` feature byte `0`)
+- `0x06BE` — **Parts Shop course** roadside shop marker (“power-up” / green wrench shield). Live HUD example: `POSITION: 06BE:…:0203` near 浜崎橋 on the mini-map; Course Guide shows **PARTS SHOP COURSE** with the wrench badge. Drive into this marker to open Parts workshops (same idea as OVERHAUL on Car Shop).
 
 ## Courses vs roadside buildings
 
@@ -63,7 +64,7 @@ On **Car Shop** course, roadside exits are Car Shop services, e.g.:
 - **OVERHAUL** — engine refresh / overhaul UI (CP cost). Not the Parts course.
 - Car dealer buildings — buy / sell / tickets.
 
-Parts workshops (engine / aero / suspension shops, etc.) are on the **Parts Shop course**, usually reached via **Select Destination → PARTS SHOP** / **Back to PA Menu → Go to Shops**, not by finding an OVERHAUL-style door on the Car Shop loop.
+Parts workshops (engine / aero / suspension shops, etc.) are on the **Parts Shop course**. After you transfer onto that course, look for the **green wrench shield** Course Guide marker at junction **`0x06BE`** and drive into it — that is the shop entrance, not a Main-course rival spawn. You can also reach the course via **Select Destination → PARTS SHOP** / **Back to PA Menu → Go to Shops** (not via an OVERHAUL-style door on the Car Shop loop).
 
 PA destination list labels include: **CAR SHOP**, **PARTS SHOP**, **MERCHANDISE SHOP**, **TUNED CAR EXCHANGE**, **Return to PA**, **Go to Shops**.
 
