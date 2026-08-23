@@ -1,5 +1,8 @@
 # SBOL player navigation notes (v2.03 / private server)
 
+> **Prefer the consolidated guide:** [player-field-guide.md](player-field-guide.md)  
+> This file is the earlier scratchpad; content overlaps and is kept for history.
+
 Field notes from live Main / Car Shop / Parts exploration. Useful for operators and future docs.
 
 ## In-course HUD strip
