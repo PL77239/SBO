@@ -103,22 +103,34 @@ void ClientPacketBattle(Client* client)
 	break;
 	case 0x504:
 	{	// Initiate battle : With NPC
-		// Rival ID @ 0x04
+		// Rival ID @ 0x04 — course entity ID from SendRivalJoin (0..n), not DB rivalID
 		clientID = client->inbuf.get<uint16_t>(0x04);
-		if (clientID < COURSE_NPC_LIMIT)
-		{	// Is Rival ID
-			client->SendBattleChallengeNPC(clientID, 100000);
-			client->logger->Log(Logger::LOGTYPE_CLIENT, L"Client %s (%u / %s) with ID %u is challenging NPC ID %u",
+		if (client->battle.status != Client::BATTLESTATUS::BS_NOT_IN_BATTLE)
+		{
+			client->SendBattleNPCAbort(0);
+			client->logger->Log(Logger::LOGTYPE_CLIENT, L"Client %s (%u / %s) with ID %u NPC challenge ignored; already in battle status %u",
 				client->logger->toWide(client->handle).c_str(),
 				client->driverslicense,
 				client->logger->toWide((char*)&client->IP_Address).c_str(),
 				client->courseID,
-				clientID);
+				(uint32_t)client->battle.status);
+			return;
+		}
+		if (clientID < COURSE_NPC_LIMIT)
+		{	// Is Rival ID
+			client->SendBattleChallengeNPC(clientID, 100000);
+			client->logger->Log(Logger::LOGTYPE_CLIENT, L"Client %s (%u / %s) with ID %u is challenging NPC ID %u (spawned=%u course=%u)",
+				client->logger->toWide(client->handle).c_str(),
+				client->driverslicense,
+				client->logger->toWide((char*)&client->IP_Address).c_str(),
+				client->courseID,
+				clientID,
+				(uint32_t)client->rivals.size(),
+				client->currentCourse);
 		}
 		else
 		{
-			client->battle.status = Client::BATTLESTATUS::BS_NOT_IN_BATTLE;
-			client->SendBattleAbort(0);
+			client->SendBattleNPCAbort(0);
 			client->logger->Log(Logger::LOGTYPE_CLIENT, L"Client %s (%u / %s) with ID %u is challenging invalid NPC ID %u",
 				client->logger->toWide(client->handle).c_str(),
 				client->driverslicense,
