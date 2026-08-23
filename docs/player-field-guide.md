@@ -236,9 +236,31 @@ NVIDIA **NIS/DLSS GitHub SDKs** need DX11+/Vulkan integration — not a drop-in 
 
 ---
 
-## 10. Time Attack rewards
+## 10. Time Attack — locations, exits, rewards
 
-**Where to code:** Battle Server only — not the DB service.
+### Map (vs Shutoko legend)
+
+SBO’s playable mesh is close to the usual Shutoko “featured” diagram (**C1 + Wangan/B-ZONE + radials**), **without** the northern Itabashi / far-N stub from some community legends.
+
+![TA exits on Shutoko](map_preview_time_attack.png)
+
+![TA access schematic](map_txr_time_attack.png)
+
+| Source | What we parsed |
+|--------|----------------|
+| `coursenames[]` | `6` = Time Attack A, `7` = Time Attack B |
+| Items / lang | Valet **2115** → TA A, **2116** → TA B; arrive strings 638/637; Start ICs include **Ariake / Daiba / Fukuzumi** |
+| Course Guide (live) | **Tatsumi JCT** → left **TIME ATTACK A** / 湾岸線 |
+| `COURSE/EXIT/` | `EX_ARI*` Ariake, plus Shiba / Hamasaki / Edobashi / Yaesu / Ueno… |
+| `SHUTO.DPP` | Junction ID = node index. Best match for Tatsumi hub: **`0x006F`** (high-degree SE). Other bay pins are wiki→mesh estimates — confirm with in-game `POSITION` |
+
+JSON dump: [`time_attack_locations.json`](time_attack_locations.json).
+
+**Enter TA** via Course Guide transfer, Locations / World Map **TA**, or valet — same idea as shops: **separate courses**, not a C1 roadside shop pin.
+
+### Rewards (where to code)
+
+**Battle Server only** — not the DB service.
 
 | Piece | Location |
 |-------|----------|
@@ -248,9 +270,9 @@ NVIDIA **NIS/DLSS GitHub SDKs** need DX11+/Vulkan integration — not a drop-in 
 | Finish time packet | Still unmapped (`0x0800` / `0x0D00` / `0x1300` / `0x1400` are currently `DoNothing`) — log unknown types while driving TA to find it |
 | Rival-style pattern | Mirror `processBattleWin()` / `SendBattleNPCFinish()` |
 
-**Base fare without personal records:** yes — that is the right first step. Pay a flat CP + XP for completing a TA run (leave course after entering A/B, or later: on verified finish). Add time-tier bonuses later once you have times and the finish packet. Keep a short cooldown so exit-farming does not print money.
+**Base fare without personal records:** yes — flat CP + XP on complete, then time tiers later. Cooldown against exit-farming.
 
-Self-contained design + drop-in sources: repo folder **`time_attack/`** on branch `cursor/time-attack-rewards-365a` (download that one folder from the PR).
+Drop-in module: folder **`time_attack/`** on branch `cursor/time-attack-rewards-365a`.
 
 ---
 
@@ -297,4 +319,4 @@ Remake PA names (平和島, 辰巳, 代々木, 芝浦, 箱崎) are geography onl
 | Rival ghosts / Passing / bot count | §7 |
 | CURRENT TRACK / Metropolis As | §1, §8 |
 | Engine SE / DLS normalize | §8b |
-| Time Attack CP/XP | §10 + `time_attack/` branch |
+| Time Attack CP/XP + exit map | §10 + `map_preview_time_attack.png` + `time_attack/` branch |

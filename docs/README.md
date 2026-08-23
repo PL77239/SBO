@@ -17,3 +17,6 @@ Private-server field notes and maps for **Shutokou Battle Online** (client ~v2.0
 | [map_txr_parts_shops.png](map_txr_parts_shops.png) | TXR-style C1 schematic — Parts workshop pins |
 | [map_txr_shop_course_exits.png](map_txr_shop_course_exits.png) | How to enter/leave Car Shop & Parts (not Main off-ramps) |
 | [map_preview_parts_shops.png](map_preview_parts_shops.png) | Wider Shutoko map + in-game HUD + `SHUTO.DPP` mesh |
+| [map_preview_time_attack.png](map_preview_time_attack.png) | Time Attack exits/locations on Shutoko (no N Itabashi stub) |
+| [map_txr_time_attack.png](map_txr_time_attack.png) | TA access schematic (Tatsumi / valet / course IDs) |
+| [time_attack_locations.json](time_attack_locations.json) | Parsed TA pin table (junction hex + roles) |
