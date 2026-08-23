@@ -1,0 +1,92 @@
+[
+  {
+    "name": "Tatsumi JCT",
+    "px": 1040.5,
+    "py": 1028.5,
+    "kind": "transfer",
+    "role": "Course Guide \u2192 TIME ATTACK A / \u6e7e\u5cb8\u7dda",
+    "junction": 111,
+    "junction_hex": "0x006F",
+    "xz": [
+      4805.6,
+      7790.7
+    ],
+    "degree": 22,
+    "fit_err": 0.0
+  },
+  {
+    "name": "Ariake JCT",
+    "px": 932.3529411764706,
+    "py": 1034.3823529411766,
+    "kind": "start_ic",
+    "role": "Start: Ariake IC \u00b7 EXIT EX_ARI*",
+    "junction": 252,
+    "junction_hex": "0x00FC",
+    "xz": [
+      1515.6,
+      6797.7
+    ],
+    "degree": 6,
+    "fit_err": 53.9
+  },
+  {
+    "name": "Daiba (R11)",
+    "px": 836.4621848739496,
+    "py": 1100.405462184874,
+    "kind": "start_ic",
+    "role": "Start: Daiba IC (R11 / Rainbow Bridge)",
+    "junction": 221,
+    "junction_hex": "0x00DD",
+    "xz": [
+      6.8,
+      6932.7
+    ],
+    "degree": 6,
+    "fit_err": 24.4
+  },
+  {
+    "name": "Kasai JCT",
+    "px": 1232.5,
+    "py": 782.5,
+    "kind": "corridor",
+    "role": "Wangan / B-ZONE \u00b7 C2 meet",
+    "junction": 77,
+    "junction_hex": "0x004D",
+    "xz": [
+      4062.9,
+      10731.8
+    ],
+    "degree": 14,
+    "fit_err": 236.7
+  },
+  {
+    "name": "Shibaura JCT",
+    "px": 740.5714285714286,
+    "py": 1166.4285714285713,
+    "kind": "corridor",
+    "role": "R1 / R11 approach to Bayshore",
+    "junction": 1694,
+    "junction_hex": "0x069E",
+    "xz": [
+      -905.0,
+      6681.2
+    ],
+    "degree": 6,
+    "fit_err": 102.9
+  },
+  {
+    "name": "Fukuzumi",
+    "px": 752.5,
+    "py": 992.0,
+    "kind": "start_ic",
+    "role": "Start: Fukuzumi IC (lang)",
+    "junction": 2225,
+    "junction_hex": "0x08B1",
+    "xz": [
+      -1986.7,
+      10051.4
+    ],
+    "degree": 11,
+    "fit_err": 22.1
+  }
+]

@@ -19,13 +19,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -39,15 +39,23 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <!--
+    Lib search order (Win32 only — these .libs are 32-bit):
+      1) $(ProjectDir)..\lib\win32-*     no spaces (preferred; lives in server_client/lib)
+      2) $(ProjectDir)lib\win32-*        project-local copy
+      3) $(ProjectDir)lib\Debug|Release  legacy layout
+    AdditionalDependencies below also pass full paths so LNK1104 cannot
+    fail just because /LIBPATH broke on the space in "SBOL Battle Server".
+  -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>.\include;$(IncludePath)</IncludePath>
-    <LibraryPath>.\lib\$(configuration);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\lib\win32-debug;$(ProjectDir)lib\win32-debug;$(ProjectDir)lib\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>.\include;$(IncludePath)</IncludePath>
-    <LibraryPath>.\lib\$(configuration);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\lib\win32-release;$(ProjectDir)lib\win32-release;$(ProjectDir)lib\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -63,8 +71,12 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <AdditionalDependencies>ws2_32.lib;libcrypto.lib;libssl.lib;Crypt32.lib;GDI32.LIB;ADVAPI32.LIB;USER32.LIB;BlowFishSBOL.lib;Winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\lib\win32-debug;$(ProjectDir)lib\win32-debug;$(ProjectDir)lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(ProjectDir)..\lib\win32-debug\libcrypto.lib;$(ProjectDir)..\lib\win32-debug\libssl.lib;$(ProjectDir)..\lib\win32-debug\BlowFishSBOL.lib;ws2_32.lib;Crypt32.lib;GDI32.LIB;ADVAPI32.LIB;USER32.LIB;Winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreLinkEvent>
+      <Command>if not exist "$(ProjectDir)..\lib\win32-debug\libcrypto.lib" if not exist "$(ProjectDir)lib\win32-debug\libcrypto.lib" if not exist "$(ProjectDir)lib\Debug\libcrypto.lib" (echo ERROR: libcrypto.lib not found. Expected under server_client\lib\win32-debug or "SBOL Battle Server"\lib\win32-debug &amp;&amp; exit /b 1)</Command>
+    </PreLinkEvent>
     <PostBuildEvent>
       <Command>start robocopy "$(ProjectDir)data" "$(OutDir)data" /e /r:0 /w:0 /mt:4</Command>
     </PostBuildEvent>
@@ -81,10 +93,14 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>ws2_32.lib;libcrypto.lib;libssl.lib;Crypt32.lib;GDI32.LIB;ADVAPI32.LIB;USER32.LIB;BlowFishSBOL.lib;Winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\lib\win32-release;$(ProjectDir)lib\win32-release;$(ProjectDir)lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(ProjectDir)..\lib\win32-release\libcrypto.lib;$(ProjectDir)..\lib\win32-release\libssl.lib;$(ProjectDir)..\lib\win32-release\BlowFishSBOL.lib;ws2_32.lib;Crypt32.lib;GDI32.LIB;ADVAPI32.LIB;USER32.LIB;Winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OptimizeReferences>true</OptimizeReferences>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
+    <PreLinkEvent>
+      <Command>if not exist "$(ProjectDir)..\lib\win32-release\libcrypto.lib" if not exist "$(ProjectDir)lib\win32-release\libcrypto.lib" if not exist "$(ProjectDir)lib\Release\libcrypto.lib" (echo ERROR: libcrypto.lib not found. Expected under server_client\lib\win32-release or "SBOL Battle Server"\lib\win32-release &amp;&amp; exit /b 1)</Command>
+    </PreLinkEvent>
     <PostBuildEvent>
       <Command>start robocopy "$(ProjectDir)data" "$(OutDir)data" /e /r:0 /w:0 /mt:4</Command>
     </PostBuildEvent>

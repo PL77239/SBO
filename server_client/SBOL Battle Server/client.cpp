@@ -1241,7 +1241,13 @@ void Client::SendWelcome(uint8_t type, std::string& name)
 	outbuf.setType(0x100);
 	outbuf.setSubType(0x180);
 	outbuf.append<uint8_t>(type); // Type ????
-	outbuf.appendString(name, 0x08); // Server Name ????
+	// Name field is a fixed 8-byte blob (may contain embedded NULs). Do not use strcpy.
+	uint8_t nameBuf[8] = { 0 };
+	CopyMemory(nameBuf, name.data(), min(name.size(), (size_t)8));
+	outbuf.appendArray(nameBuf, 8);
+	logger->Log(Logger::LOGTYPE_CLIENT, L"Sending 0x0180 welcome to %s (%s)",
+		logger->toWide(username).c_str(),
+		logger->toWide((char*)&IP_Address).c_str());
 	Send();
 }
 void Client::SendAcceptConnection()
@@ -1261,18 +1267,26 @@ void Client::SendAcceptConnection()
 			}
 			else
 			{
+				// Keep explicit length: a bare C-string starting with '\0' becomes an empty std::string.
 				SendWelcome(0, std::string("\0\1\2\4\5\6\7", 7));
 				return;
 			}
 		}
 		else
 		{
+			logger->Log(Logger::LOGTYPE_CLIENT, L"Rejecting login (busy): status=%u management=%u from %s",
+				(uint32_t)server->getStatus(),
+				server->getConnectedToManagementServer() ? 1u : 0u,
+				logger->toWide((char*)&IP_Address).c_str());
 			SendAuthError(Server::AUTHLIST::AUTH_BUSY);
 			return;
 		}
 	}
 	else
 	{
+		logger->Log(Logger::LOGTYPE_CLIENT, L"Rejecting login (outdated): ver=0x%08X from %s",
+			inbuf.getVer(),
+			logger->toWide((char*)&IP_Address).c_str());
 		SendAuthError(Server::AUTHLIST::AUTH_OUTDATED);
 		return;
 	}
@@ -1300,6 +1314,9 @@ void Client::SendAuthError(uint8_t cmd)
 }
 void Client::SendCareerRecord()
 {
+	logger->Log(Logger::LOGTYPE_CLIENT, L"0x0C00 career record request from %s (%u)",
+		logger->toWide(handle).c_str(),
+		driverslicense);
 	outbuf.clearBuffer();
 	outbuf.setSize(0x06);
 	outbuf.setOffset(0x06);
@@ -1367,39 +1384,67 @@ void Client::SendCourseJoin(uint8_t notify)
 }
 void Client::SendRivalRecords()
 {
+	// 2.03 Data menu (course "info" button) requires a valid 0x0C81 reply.
+	// Missing/invalid replies crash the client with no useful client-side log.
+	const uint32_t rivalTeamLimit = sizeof(careerdata.rivalStatus) / sizeof(RIVAL_STATUS);
 	int32_t count = static_cast<int32_t>(inbuf.get<uint8_t>(0x04));
-	if (inbuf.getSize() < 5 + (count * sizeof(int32_t)) || count > sizeof(careerdata.rivalStatus) / sizeof(RIVAL_STATUS))
-	{
-		logger->Log(Logger::LOGTYPE_CLIENT, L"Client %s (%u / %s) has sent invalid 0xC01 packet.",
-			logger->toWide(handle).c_str(),
-			driverslicense,
-			logger->toWide((char*)&IP_Address).c_str()
-		);
-		Disconnect();
-		return;
-	}
+	bool requestOk = (inbuf.getSize() >= 5 + (count * sizeof(int32_t))) &&
+		(count >= 0) &&
+		((uint32_t)count <= rivalTeamLimit);
+
+	logger->Log(Logger::LOGTYPE_CLIENT, L"0x0C01 rival records request from %s (%u): count=%d size=%u ok=%u",
+		logger->toWide(handle).c_str(),
+		driverslicense,
+		count,
+		(uint32_t)inbuf.getSize(),
+		(uint32_t)requestOk);
+
 	outbuf.clearBuffer();
 	outbuf.setSize(0x06);
 	outbuf.setOffset(0x06);
 	outbuf.setType(0xC00);
 	outbuf.setSubType(0xC81);
 
-	outbuf.append<uint8_t>(count); // Rival count should be 0x64 as even removed rival ID's are processed
-
+	// Client wire remap: RS_HIDDEN/SHOW/LOST/WON -> NotSeen/Seen/Lost/Won
 	uint8_t status_remaps[] = { 3, 0, 1, 2 };
-	inbuf.addOffset(0x05);
+
+	if (!requestOk)
+	{
+		// Still answer so the Data menu does not hard-crash; dump all-hidden for every team slot.
+		logger->Log(Logger::LOGTYPE_CLIENT, L"Client %s (%u / %s) sent invalid 0x0C01 - sending safe empty rival table.",
+			logger->toWide(handle).c_str(),
+			driverslicense,
+			logger->toWide((char*)&IP_Address).c_str()
+		);
+		outbuf.append<uint8_t>((uint8_t)rivalTeamLimit);
+		for (uint32_t currentID = 0; currentID < rivalTeamLimit; currentID++)
+		{
+			outbuf.append<uint32_t>(currentID);
+			outbuf.append<uint8_t>(0x00);
+			outbuf.append<uint32_t>(0);
+		}
+		Send();
+		return;
+	}
+
+	outbuf.append<uint8_t>((uint8_t)count); // Rival count should be 0x64 as even removed rival ID's are processed
+
+	inbuf.setOffset(0x05);
 	for (int32_t i = 0; i < count; i++)
 	{
 		uint32_t currentID = inbuf.get<uint32_t>();
-		if (currentID >= sizeof(careerdata.rivalStatus) / sizeof(RIVAL_STATUS))
+		if (currentID >= rivalTeamLimit)
 		{
-			logger->Log(Logger::LOGTYPE_CLIENT, L"Client %s (%u / %s) has sent invalid 0xC01 packet.",
+			logger->Log(Logger::LOGTYPE_CLIENT, L"Client %s (%u / %s) 0x0C01 team id %u out of range - clamping to hidden.",
 				logger->toWide(handle).c_str(),
 				driverslicense,
-				logger->toWide((char*)&IP_Address).c_str()
+				logger->toWide((char*)&IP_Address).c_str(),
+				currentID
 			);
-			Disconnect();
-			return;
+			outbuf.append<uint32_t>(currentID);
+			outbuf.append<uint8_t>(0x00);
+			outbuf.append<uint32_t>(0);
+			continue;
 		}
 		outbuf.append<uint32_t>(currentID); // Rival id. Must be loop index. Game is missing some teams.
 		int32_t check = 0;
@@ -2474,7 +2519,8 @@ void Client::enableShopPackets()
 	packetDisable(0x05);
 	packetDisable(0x07);
 	packetEnable(0x09);
-	packetDisable(0x0C);
+	// Keep 0x0C enabled: 2.03 Data/"info" menu needs 0x0C80/0x0C81 even if opened around shop transitions.
+	packetEnable(0x0C);
 	packetEnable(0x11);
 	packetEnable(0x12);
 	packetDisable(0x15);
@@ -2557,7 +2603,18 @@ void Client::ProcessPacket()
 		}
 #endif
 		// Deny all except authentication packets from clients not authenticated
-		if (CanSendPackets(packetType) == false) return;
+		if (CanSendPackets(packetType) == false)
+		{
+			// Silent drops here previously made the 2.03 Data menu (0x0Cxx) crash with no server log.
+			if (packetType == 0x0C || packetType == 0x10)
+			{
+				logger->Log(Logger::LOGTYPE_CLIENT, L"Dropping disallowed packet %04X from %s (%u) - Data/stats UI may crash.",
+					inbuf.getType(),
+					logger->toWide(handle).c_str(),
+					driverslicense);
+			}
+			return;
+		}
 
 		// Clear packet resend
 		packetResend = 0;

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <map>
 #include <exception>
 #include <thread>
 #include "globals.h"
@@ -182,6 +183,8 @@ public:
 	Client* findUser(std::string& in);
 	Client* findUser(uint32_t in);
 	void saveClientData(Client* client);
+	void stashCourseTransfer(Client* client);
+	bool takeCourseTransfer(uint32_t license, PENDING_COURSE_TRANSFER& out);
 	std::vector<std::string> split(std::string& in, std::string& delimit);
 	uint32_t getNextClientID();
 	bool isValidCar(uint16_t carID);
@@ -218,6 +221,7 @@ public:
 private:
 	uint32_t currentClientID;
 	std::vector<uint32_t> authenticatedClients;
+	std::map<uint32_t, PENDING_COURSE_TRANSFER> pendingCourseTransfers;
 	std::vector<uint32_t> serverConnections;
 	uint32_t serverNumConnections;
 	bool running;
