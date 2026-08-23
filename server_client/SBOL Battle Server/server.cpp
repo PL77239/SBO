@@ -695,6 +695,38 @@ void Server::saveClientData(Client* client)
 		managementserver.Send();
 	}
 }
+void Server::stashCourseTransfer(Client* client)
+{
+	if (!client || !client->driverslicense) return;
+	PENDING_COURSE_TRANSFER pending = {};
+	pending.startJunction = client->startJunction;
+	pending.startDistance = client->startDistance;
+	pending.currentCourse = client->currentCourse;
+	pending.notBeginner = client->notBeginner;
+	pending.createdTick = timeGetTime();
+	pendingCourseTransfers[client->driverslicense] = pending;
+	logger->Log(Logger::LOGTYPE_CLIENT,
+		L"Stashed course transfer for license %u: course=%u junction=%u distance=%u notBeginner=%u",
+		client->driverslicense,
+		pending.currentCourse,
+		pending.startJunction,
+		pending.startDistance,
+		(uint32_t)pending.notBeginner);
+}
+bool Server::takeCourseTransfer(uint32_t license, PENDING_COURSE_TRANSFER& out)
+{
+	auto it = pendingCourseTransfers.find(license);
+	if (it == pendingCourseTransfers.end()) return false;
+	// Drop stale entries (client never came back).
+	if (timeGetTime() - it->second.createdTick > 120000)
+	{
+		pendingCourseTransfers.erase(it);
+		return false;
+	}
+	out = it->second;
+	pendingCourseTransfers.erase(it);
+	return true;
+}
 int32_t Server::tcp_sock_open(struct in_addr ip, uint16_t port)
 {
 	int32_t fd, bufsize, turn_on_option_flag = 1, rcSockopt, keepAlive = 0;

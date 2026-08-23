@@ -766,7 +766,10 @@ void ManagementServer::SendCheckCredentials(Client* client)
 	outbuf.setSubType(0x0000);
 	outbuf.append<int32_t>(client->ClientSocket);
 	outbuf.appendString(client->username, 0x14);
-	outbuf.appendArray((uint8_t*)&client->inbuf.buffer[0x04], client->inbuf.getSize() - 2);
+	// Client 0x0102 layout: size(2) type(2) password... — copy password payload only (from offset 4).
+	uint16_t clientPktSize = client->inbuf.getSize();
+	if (clientPktSize > 4)
+		outbuf.appendArray((uint8_t*)&client->inbuf.buffer[0x04], clientPktSize - 4);
 	if (Send())
 	{
 		client->SendAuthError(Server::AUTHLIST::AUTH_BUSY);

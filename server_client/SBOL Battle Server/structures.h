@@ -15,6 +15,14 @@ typedef struct st_coursequeue {
 	int32_t exclude;
 	uint8_t sndbuf[CLIENT_BUFFER_SIZE];
 } COURSE_QUEUE;
+// Survives the TCP drop/reconnect that follows client 0x0302 course/PA transfers.
+typedef struct st_pendingcoursetransfer {
+	uint16_t startJunction;
+	uint16_t startDistance;
+	uint32_t currentCourse;
+	bool notBeginner;
+	uint32_t createdTick;
+} PENDING_COURSE_TRANSFER;
 typedef struct st_messagequeue {
 	int32_t socket;
 	uint8_t buffer[CLIENT_BUFFER_SIZE];
